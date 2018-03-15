@@ -10,12 +10,13 @@ import dataBaseTool
 import json
 import chardet
 import time
+import re
 
 class wangYiSpider(object):
 	def __init__(self,id):
 		#初始化一个commentList爬取存下来的评论
 		self.commentList =[]
-		self.count = 1
+		self.count = 0
 		self.sys_name = getpass.getuser()
 		self.modulus = r'00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7'
 		self.nonce = r'0CoJUm6Qyw8W8jud'
@@ -42,6 +43,7 @@ class wangYiSpider(object):
 
 		}
 		self.dbTool = dataBaseTool.dataBaseTool()
+		self.tabelName = 'music468513829'
 
 
 	#获取评论，传入评论与偏移量参数到方法saveToDB
@@ -64,7 +66,6 @@ class wangYiSpider(object):
 		jsonData = recq.json()
 		#print(jsonData)
 		try:
-			print("进入try")
 			self.saveToDB(jsonData,offset)
 			return int(jsonData['total'])
 		except Exception as e:
@@ -77,8 +78,9 @@ class wangYiSpider(object):
 		try:
 			for c in jsonData['comments']:
 				timeStr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-				insert_str = "INSERT INTO comment(cnt,musicId,offset,insertTime)VALUES('%s','%s','%d','%s')"% (c['content'].strip(),self.musicId,offset,timeStr)
-				print("正在插入")
+				replace = re.compile("'\n'")
+				c['content'] = re.sub(replace,"",c['content'])
+				insert_str = "INSERT INTO "+self.tabelName+"(cnt,musicId,offset,insertTime)VALUES('%s','%s','%d','%s')"% (c['content'].strip(),self.musicId,offset,timeStr)
 				self.dbTool.execute_insert(insert_str)
 		except Exception as e:
 			raise e
@@ -89,11 +91,10 @@ class wangYiSpider(object):
 		if offset == -1:
 			return
 		#查询数据库最后一次查询offset是多少
-		sql_str = "SELECT MAX(offset) as offset FROM COMMENT WHERE musicId='%s'"%(self.musicId)
+		sql_str = "SELECT MAX(offset) as offset FROM "+self.tabelName+" WHERE musicId='%s'"%(self.musicId)
 		tempExe = self.dbTool.execute_one(sql_str)
 		#断点续存
 		if tempExe['offset'] == None:
-			print(offset)
 			off = 1
 		else:
 			off = tempExe['offset']
@@ -101,10 +102,15 @@ class wangYiSpider(object):
 		#off = offset
 		total = self.getComment(off)
 		print('评论的总数'+str(total))
-		while off <30:
-			off+=10
-			time.sleep(3)
-			self.getComment(off)
+		while off <total:
+			if self.count>10000:
+				time.sleep(5400)
+				self.count=0
+			else:
+				off+=10
+				self.count+=1
+				time.sleep(3)
+				self.getComment(off)
 
 
 def main(id='65546'):
@@ -112,7 +118,7 @@ def main(id='65546'):
 	spider.process(1)
 
 if __name__ =='__main__':
-	main('526464293')
+	main('468513829')
 
 
 
