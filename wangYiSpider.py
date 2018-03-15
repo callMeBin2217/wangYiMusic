@@ -91,9 +91,9 @@ class wangYiSpider(object):
 		#查询数据库最后一次查询offset是多少
 		sql_str = "SELECT MAX(offset) as offset FROM COMMENT WHERE musicId='%s'"%(self.musicId)
 		tempExe = self.dbTool.execute_one(sql_str)
-		if tempExe == 1:
+		if tempExe['offset'] == None:
 			print(offset)
-			off = offset
+			off = 1
 		else:
 			off = tempExe['offset']
 			print(tempExe)
@@ -111,7 +111,7 @@ def main(id='65546'):
 	spider.process(1)
 
 if __name__ =='__main__':
-	main()
+	main('526464293')
 
 
 
