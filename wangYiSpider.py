@@ -91,6 +91,7 @@ class wangYiSpider(object):
 		#查询数据库最后一次查询offset是多少
 		sql_str = "SELECT MAX(offset) as offset FROM COMMENT WHERE musicId='%s'"%(self.musicId)
 		tempExe = self.dbTool.execute_one(sql_str)
+		#断点续存
 		if tempExe['offset'] == None:
 			print(offset)
 			off = 1
