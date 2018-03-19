@@ -11,6 +11,7 @@ import json
 import chardet
 import time
 import re
+import ipPool
 
 class wangYiSpider(object):
 	def __init__(self,id):
@@ -44,6 +45,8 @@ class wangYiSpider(object):
 		}
 		self.dbTool = dataBaseTool.dataBaseTool()
 		self.tabelName = 'music468513829'
+		self.ipPro = ipPool.ipPool()
+		self.ipList = self.ipPro.getIpList()
 
 
 	#获取评论，传入评论与偏移量参数到方法saveToDB
@@ -62,9 +65,15 @@ class wangYiSpider(object):
 			'params':encText,
 			'encSecKey':self.encSecKey
 		}
-		recq = requests.post(self.BASE_URL,headers=self.headers,data=data)
-		jsonData = recq.json()
-		#print(jsonData)
+		try:
+			recq = requests.post(self.BASE_URL,headers=self.headers,data=data,proxies=self.ipPro.get_random_ip(self.ipList))
+			jsonData = recq.json()
+		except Exception as e:
+			recq = requests.post(self.BASE_URL,headers=self.headers,data=data)
+			print(e)
+			time.sleep(5)
+			jsonData = recq.json()
+		print(jsonData)
 		try:
 			self.saveToDB(jsonData,offset)
 			return int(jsonData['total'])
@@ -78,8 +87,10 @@ class wangYiSpider(object):
 		try:
 			for c in jsonData['comments']:
 				timeStr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-				replace = re.compile("'\n'")
-				c['content'] = re.sub(replace,"",c['content'])
+				replace1 = re.compile("'\n'")
+				replace2 = re.compile("'")
+				c['content'] = re.sub(replace1,"",c['content'])
+				c['content'] = re.sub(replace2,"",c['content'])
 				insert_str = "INSERT INTO "+self.tabelName+"(cnt,musicId,offset,insertTime)VALUES('%s','%s','%d','%s')"% (c['content'].strip(),self.musicId,offset,timeStr)
 				self.dbTool.execute_insert(insert_str)
 		except Exception as e:
@@ -103,13 +114,13 @@ class wangYiSpider(object):
 		total = self.getComment(off)
 		print('评论的总数'+str(total))
 		while off <total:
-			if self.count>10000:
-				time.sleep(5400)
+			if self.count>5000:
+				time.sleep(2700)
 				self.count=0
 			else:
 				off+=10
-				self.count+=1
-				time.sleep(3)
+				self.count+=10
+				time.sleep(10)
 				self.getComment(off)
 
 
