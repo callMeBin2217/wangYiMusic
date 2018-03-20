@@ -116,6 +116,7 @@ class wangYiSpider(object):
 		while off <total:
 			if self.count>5000:
 				time.sleep(2700)
+				self.ipList = self.ipPro.getIpList()
 				self.count=0
 			else:
 				off+=10
