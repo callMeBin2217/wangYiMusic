@@ -44,7 +44,7 @@ class wangYiSpider(object):
 
 		}
 		self.dbTool = dataBaseTool.dataBaseTool()
-		self.tabelName = 'music468513829'
+		self.tabelName = '468513829music'
 		self.ipPro = ipPool.ipPool()
 		self.ipList = self.ipPro.getIpList()
 
@@ -86,12 +86,17 @@ class wangYiSpider(object):
 		print("进入savetodb")
 		try:
 			for c in jsonData['comments']:
+				#插入时间
 				timeStr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+				#对评论进行去换行符等处理
 				replace1 = re.compile("'\n'")
 				replace2 = re.compile("'")
 				c['content'] = re.sub(replace1,"",c['content'])
 				c['content'] = re.sub(replace2,"",c['content'])
-				insert_str = "INSERT INTO "+self.tabelName+"(cnt,musicId,offset,insertTime)VALUES('%s','%s','%d','%s')"% (c['content'].strip(),self.musicId,offset,timeStr)
+				#对评论时间作处理
+				c['time'] = time.localtime(int(str(c['time'])[:-3]))
+				commentTime = time.strftime('%Y-%m-%d %H:%M:%S',c['time'])
+				insert_str = "INSERT INTO "+self.tabelName+"(cnt,commentTime,likedCount,musicId,offset,insertTime)VALUES('%s','%s','%s','%s','%d','%s')"% (c['content'].strip(),commentTime,str(c['likedCount']),self.musicId,offset,timeStr)
 				self.dbTool.execute_insert(insert_str)
 		except Exception as e:
 			raise e
