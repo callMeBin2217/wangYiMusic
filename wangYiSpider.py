@@ -94,7 +94,8 @@ class wangYiSpider(object):
 				c['content'] = re.sub(replace1,"",c['content'])
 				c['content'] = re.sub(replace2,"",c['content'])
 				#对评论时间作处理(python接受的时间戳位数是10，但是爬取出的数据时间戳是13，需要转化)
-				commentTime = time.strftime('%Y-%m-%d %H:%M:%S',c['time']/1000)
+				c['time'] = time.localtime(int(c['time'])/1000)
+				commentTime = time.strftime('%Y-%m-%d %H:%M:%S',c['time'])
 				insert_str = "INSERT INTO "+self.tabelName+"(cnt,commentTime,likedCount,musicId,offset,insertTime)VALUES('%s','%s','%s','%s','%d','%s')"% (c['content'].strip(),commentTime,str(c['likedCount']),self.musicId,offset,timeStr)
 				self.dbTool.execute_insert(insert_str)
 		except Exception as e:
